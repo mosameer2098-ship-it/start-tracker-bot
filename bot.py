@@ -9,8 +9,9 @@ GROUP_ID = int(os.getenv("GROUP_ID", "0"))
 
 ADMIN_ID = 8132623749
 
+# Session name change kar diya hai taaki purana lock khul jaye
 app = Client(
-    "start_tracker_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
+    "bot_session_v2", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
 )
 
 AUTO_MSG = None
@@ -31,9 +32,9 @@ def save_user(user_id):
 
 # Background Auto Broadcast Task (Har 60 seconds / 1 minute mein)
 async def auto_broadcast_loop():
-  await asyncio.sleep(15)  # Bot start hone ka 15 second wait karega
+  await asyncio.sleep(15)  # Bot start hone ke baad 15 sec wait karega
   while True:
-    await asyncio.sleep(60)  # 1 minute wait
+    await asyncio.sleep(60)  # Har 1 minute ka gap
     global AUTO_MSG
     if AUTO_MSG and os.path.exists("users.txt"):
       with open("users.txt", "r") as f:
@@ -44,7 +45,7 @@ async def auto_broadcast_loop():
           user_id = int(uid)
           await app.send_message(user_id, AUTO_MSG)
         except Exception:
-          pass  # Blocked users ko ignore karega
+          pass  # Jisne bot block kiya hoga wahan ignore ho jayega
 
 
 @app.on_message(filters.command("start") & filters.private)
@@ -73,7 +74,7 @@ async def start_handler(client, message):
   )
 
 
-# Total users check karne ke liye
+# Total users check karne ke liye command (/users)
 @app.on_message(
     filters.command("users") & filters.private & filters.user(ADMIN_ID)
 )
@@ -91,7 +92,7 @@ async def total_users_handler(client, message):
   )
 
 
-# Instant Broadcast command
+# Instant Broadcast command (/broadcast ya /brodcast)
 @app.on_message(
     filters.command(["broadcast", "brodcast"])
     & filters.private
@@ -136,7 +137,7 @@ async def broadcast_handler(client, message):
   )
 
 
-# Auto Broadcast Message Set karne ki command
+# Auto Broadcast Set karne ki command (/setauto ya /setbrod)
 @app.on_message(
     filters.command(["setauto", "setbrod"])
     & filters.private
@@ -160,16 +161,16 @@ async def set_auto_msg(client, message):
 
 # Main function jo background task aur bot ko ek sath run karega
 async def main():
-  # Background task ko loop mein dal rahe hain
   asyncio.create_task(auto_broadcast_loop())
   await app.start()
-  print("Bot successfully start ho gaya hai aur 1-min auto broadcast active hai!")
+  print(
+      "Bot successfully start ho gaya hai aur 1-min auto broadcast active hai!"
+  )
   from pyrogram import idle
 
   await idle()
   await app.stop()
 
 
-# Heroku par error-free run karne ke liye
 if __name__ == "__main__":
   asyncio.run(main())
