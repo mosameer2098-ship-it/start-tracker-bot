@@ -1,8 +1,6 @@
-import asyncio
 import os
 from pyrogram import Client, filters, idle
 
-# Heroku ya Environment variables se values uthayenge
 API_ID = int(os.getenv("API_ID", "0"))
 API_HASH = os.getenv("API_HASH", "")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
@@ -20,7 +18,6 @@ async def start_handler(client, message):
   username = f"@{user.username}" if user.username else "N/A"
   user_id = user.id
 
-  # Group mein bhejne ke liye message
   group_msg = (
       f"🔔 **New User Started Bot!**\n\n"
       f"• **Name:** {name}\n"
@@ -33,17 +30,12 @@ async def start_handler(client, message):
   except Exception as e:
     print(f"Group mein message bhejne mein error aaya: {e}")
 
-  # User ko private chat mein welcome message
   await message.reply_text(
       f"Hello {name}! Bot ko start karne ke liye dhanyawad."
   )
 
 
-async def main():
-  await app.start()
-  print("Bot successfully start ho gaya hai!")
-  await idle()
-  await app.stop()
-
-
-asyncio.run(main())
+# Seedha start karke idle chod do, koi crash nahi hoga
+app.start()
+print("Bot successfully start ho gaya hai aur ab live hai!")
+idle()
