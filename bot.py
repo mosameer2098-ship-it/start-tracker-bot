@@ -9,9 +9,8 @@ GROUP_ID = int(os.getenv("GROUP_ID", "0"))
 
 ADMIN_ID = 8132623749
 
-# Session name change kar diya hai taaki purana lock khul jaye
 app = Client(
-    "bot_session_v2", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
+    "bot_session_v3", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
 )
 
 AUTO_MSG = None
@@ -30,11 +29,11 @@ def save_user(user_id):
       f.write(str(user_id) + "\n")
 
 
-# Background Auto Broadcast Task (Har 60 seconds / 1 minute mein)
+# Background Auto Broadcast Task (Har 1 minute mein)
 async def auto_broadcast_loop():
-  await asyncio.sleep(15)  # Bot start hone ke baad 15 sec wait karega
+  await asyncio.sleep(15)
   while True:
-    await asyncio.sleep(60)  # Har 1 minute ka gap
+    await asyncio.sleep(60)  # 1 minute wait
     global AUTO_MSG
     if AUTO_MSG and os.path.exists("users.txt"):
       with open("users.txt", "r") as f:
@@ -45,7 +44,7 @@ async def auto_broadcast_loop():
           user_id = int(uid)
           await app.send_message(user_id, AUTO_MSG)
         except Exception:
-          pass  # Jisne bot block kiya hoga wahan ignore ho jayega
+          pass
 
 
 @app.on_message(filters.command("start") & filters.private)
@@ -92,7 +91,7 @@ async def total_users_handler(client, message):
   )
 
 
-# Instant Broadcast command (/broadcast ya /brodcast)
+# Instant Broadcast command
 @app.on_message(
     filters.command(["broadcast", "brodcast"])
     & filters.private
@@ -137,7 +136,7 @@ async def broadcast_handler(client, message):
   )
 
 
-# Auto Broadcast Set karne ki command (/setauto ya /setbrod)
+# Auto Broadcast Set karne ki command
 @app.on_message(
     filters.command(["setauto", "setbrod"])
     & filters.private
@@ -159,18 +158,16 @@ async def set_auto_msg(client, message):
   )
 
 
-# Main function jo background task aur bot ko ek sath run karega
+# Pyrogram ka built-in start handler jisse background task bhi chalega
 async def main():
   asyncio.create_task(auto_broadcast_loop())
-  await app.start()
-  print(
-      "Bot successfully start ho gaya hai aur 1-min auto broadcast active hai!"
-  )
-  from pyrogram import idle
-
-  await idle()
-  await app.stop()
 
 
-if __name__ == "__main__":
-  asyncio.run(main())
+print("Bot successfully start ho raha hai...")
+app.start()
+asyncio.get_event_loop().run_until_complete(main())
+
+from pyrogram import idle
+
+idle()
+app.stop()
