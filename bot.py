@@ -29,24 +29,6 @@ def save_user(user_id):
       f.write(str(user_id) + "\n")
 
 
-# Background loop jo har 2 minute mein automatic broadcast karega
-async def auto_broadcast(client):
-  await client.start()
-  global AUTO_MSG
-  while True:
-    await asyncio.sleep(120)  # 2 minute ka wait
-    if AUTO_MSG and os.path.exists("users.txt"):
-      with open("users.txt", "r") as f:
-        users = f.read().splitlines()
-
-      for uid in users:
-        try:
-          user_id = int(uid)
-          await client.send_message(user_id, AUTO_MSG)
-        except Exception:
-          pass
-
-
 @app.on_message(filters.command("start") & filters.private)
 async def start_handler(client, message):
   user = message.from_user
@@ -73,6 +55,26 @@ async def start_handler(client, message):
   )
 
 
+# Nayi command: Total active users check karne ke liye (Sirf Admin)
+@app.on_message(
+    filters.command("users") & filters.private & filters.user(ADMIN_ID)
+)
+async def total_users_handler(client, message):
+  if not os.path.exists("users.txt"):
+    await message.reply_text(
+        "📊 **Total Active Users:** `0`"
+    )
+    return
+
+  with open("users.txt", "r") as f:
+    users = f.read().splitlines()
+
+  total_count = len(users)
+  await message.reply_text(
+      f"📊 **Bot Statistics:**\n\n• **Total Active Users:** `{total_count}`"
+  )
+
+
 @app.on_message(
     filters.command(["setauto", "setbrod"])
     & filters.private
@@ -94,6 +96,5 @@ async def set_auto_msg(client, message):
   )
 
 
-# Bot start karne ka sabse asan aur reliable tareeka
 print("Bot start ho raha hai...")
 app.run()
