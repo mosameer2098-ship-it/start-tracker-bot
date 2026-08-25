@@ -55,11 +55,11 @@ async def start_handler(client, message):
   )
 
 
+# Background task (Har 2 minute mein automatic broadcast)
 async def auto_broadcast_task():
-  await client_start_safe()
   global AUTO_MSG
   while True:
-    await asyncio.sleep(120)  # Har 2 minute baad
+    await asyncio.sleep(120)  # 2 minute ka wait
     if AUTO_MSG and os.path.exists("users.txt"):
       with open("users.txt", "r") as f:
         users = f.read().splitlines()
@@ -69,7 +69,7 @@ async def auto_broadcast_task():
           user_id = int(uid)
           await app.send_message(user_id, AUTO_MSG)
         except Exception:
-          pass  # Jisne bot block kiya hoga wahan error ignore ho jayega
+          pass  # Agar user ne bot block kiya hoga toh ignore ho jayega
 
 
 @app.on_message(
@@ -93,13 +93,10 @@ async def set_auto_msg(client, message):
   )
 
 
-async def client_start_safe():
+async def main():
   await app.start()
   print("Bot successfully start ho gaya hai!")
-
-
-async def main():
-  await client_start_safe()
+  # Background task ko chalu karenge
   asyncio.create_task(auto_broadcast_task())
   await idle()
 
