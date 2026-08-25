@@ -1,6 +1,6 @@
 import asyncio
 import os
-from pyrogram import Client, filters, idle
+from pyrogram import Client, filters
 
 API_ID = int(os.getenv("API_ID", "0"))
 API_HASH = os.getenv("API_HASH", "")
@@ -29,6 +29,24 @@ def save_user(user_id):
       f.write(str(user_id) + "\n")
 
 
+# Background loop jo har 2 minute mein automatic broadcast karega
+async def auto_broadcast(client):
+  await client.start()
+  global AUTO_MSG
+  while True:
+    await asyncio.sleep(120)  # 2 minute ka wait
+    if AUTO_MSG and os.path.exists("users.txt"):
+      with open("users.txt", "r") as f:
+        users = f.read().splitlines()
+
+      for uid in users:
+        try:
+          user_id = int(uid)
+          await client.send_message(user_id, AUTO_MSG)
+        except Exception:
+          pass
+
+
 @app.on_message(filters.command("start") & filters.private)
 async def start_handler(client, message):
   user = message.from_user
@@ -55,23 +73,6 @@ async def start_handler(client, message):
   )
 
 
-# Background task (Har 2 minute mein automatic broadcast)
-async def auto_broadcast_task():
-  global AUTO_MSG
-  while True:
-    await asyncio.sleep(120)  # 2 minute ka wait
-    if AUTO_MSG and os.path.exists("users.txt"):
-      with open("users.txt", "r") as f:
-        users = f.read().splitlines()
-
-      for uid in users:
-        try:
-          user_id = int(uid)
-          await app.send_message(user_id, AUTO_MSG)
-        except Exception:
-          pass  # Agar user ne bot block kiya hoga toh ignore ho jayega
-
-
 @app.on_message(
     filters.command(["setauto", "setbrod"])
     & filters.private
@@ -93,12 +94,6 @@ async def set_auto_msg(client, message):
   )
 
 
-async def main():
-  await app.start()
-  print("Bot successfully start ho gaya hai!")
-  # Background task ko chalu karenge
-  asyncio.create_task(auto_broadcast_task())
-  await idle()
-
-
-asyncio.run(main())
+# Bot start karne ka sabse asan aur reliable tareeka
+print("Bot start ho raha hai...")
+app.run()
