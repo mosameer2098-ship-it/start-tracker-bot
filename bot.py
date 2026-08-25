@@ -29,11 +29,11 @@ def save_user(user_id):
       f.write(str(user_id) + "\n")
 
 
-# Background Auto Broadcast Task (Har 1 minute mein)
+# Background Auto Broadcast Task (Ab ye har 10 minutes mein chalega)
 async def auto_broadcast_loop():
   await asyncio.sleep(15)
   while True:
-    await asyncio.sleep(60)  # 1 minute wait
+    await asyncio.sleep(600)  # 600 seconds = 10 minutes wait
     global AUTO_MSG
     if AUTO_MSG and os.path.exists("users.txt"):
       with open("users.txt", "r") as f:
@@ -42,7 +42,10 @@ async def auto_broadcast_loop():
       for uid in users:
         try:
           user_id = int(uid)
-          await app.send_message(user_id, AUTO_MSG)
+          if AUTO_MSG.reply_to_message:
+            await AUTO_MSG.reply_to_message.copy(user_id)
+          else:
+            await app.send_message(user_id, AUTO_MSG.text.split(None, 1)[1])
         except Exception:
           pass
 
@@ -113,8 +116,6 @@ async def broadcast_handler(client, message):
   success = 0
   failed = 0
 
-  broadcast_content = message.reply_to_message or message.text.split(None, 1)[1]
-
   with open("users.txt", "r") as f:
     users = f.read().splitlines()
 
@@ -124,6 +125,7 @@ async def broadcast_handler(client, message):
       if message.reply_to_message:
         await message.reply_to_message.copy(user_id)
       else:
+        broadcast_content = message.text.split(None, 1)[1]
         await client.send_message(user_id, broadcast_content)
       success += 1
     except Exception:
@@ -136,7 +138,7 @@ async def broadcast_handler(client, message):
   )
 
 
-# Auto Broadcast Set karne ki command
+# Auto Broadcast Set karne ki command (Ab ye 10 minutes par chalega)
 @app.on_message(
     filters.command(["setauto", "setbrod"])
     & filters.private
@@ -144,21 +146,20 @@ async def broadcast_handler(client, message):
 )
 async def set_auto_msg(client, message):
   global AUTO_MSG
-  if len(message.command) < 2:
+  if not message.reply_to_message and len(message.command) < 2:
     await message.reply_text(
-        "❌ **Kripya message likhein!**\nExample: `/setauto Yeh message har 1"
-        " minute baad jayega.`"
+        "❌ **Kripya message likhein ya kisi message ko reply karein!**\n\nExample:"
+        " `/setauto Yeh message har 10 minute baad jayega.`"
     )
     return
 
-  AUTO_MSG = message.text.split(None, 1)[1]
+  AUTO_MSG = message
   await message.reply_text(
-      "✅ **1-Minute Automatic Broadcast set ho gaya hai!**\nAb ye message har 1"
-      f" minute mein sabhi users ko jayega:\n\n`{AUTO_MSG}`"
+      "✅ **10-Minutes Automatic Broadcast set ho gaya hai!**\nAb ye message har"
+      " 10 minute mein sabhi users ko jata rahega."
   )
 
 
-# Pyrogram ka built-in start handler jisse background task bhi chalega
 async def main():
   asyncio.create_task(auto_broadcast_loop())
 
