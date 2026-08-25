@@ -1,6 +1,6 @@
 import asyncio
 import os
-from pyrogram import Client, filters
+from pyrogram import Client, filters, idle
 
 API_ID = int(os.getenv("API_ID", "0"))
 API_HASH = os.getenv("API_HASH", "")
@@ -55,15 +55,12 @@ async def start_handler(client, message):
   )
 
 
-# Nayi command: Total active users check karne ke liye (Sirf Admin)
 @app.on_message(
     filters.command("users") & filters.private & filters.user(ADMIN_ID)
 )
 async def total_users_handler(client, message):
   if not os.path.exists("users.txt"):
-    await message.reply_text(
-        "📊 **Total Active Users:** `0`"
-    )
+    await message.reply_text("📊 **Total Active Users:** `0`")
     return
 
   with open("users.txt", "r") as f:
@@ -96,5 +93,30 @@ async def set_auto_msg(client, message):
   )
 
 
-print("Bot start ho raha hai...")
-app.run()
+# Background loop jo ab properly background mein chalega
+async def auto_broadcast_loop():
+  while True:
+    await asyncio.sleep(120)  # 2 minute ka wait
+    global AUTO_MSG
+    if AUTO_MSG and os.path.exists("users.txt"):
+      with open("users.txt", "r") as f:
+        users = f.read().splitlines()
+
+      for uid in users:
+        try:
+          user_id = int(uid)
+          await app.send_message(user_id, AUTO_MSG)
+        except Exception:
+          pass
+
+
+async def main():
+  await app.start()
+  print("Bot successfully start ho gaya hai!")
+  # Background task ko shuru kar rahe hain
+  asyncio.create_task(auto_broadcast_loop())
+  await idle()
+  await app.stop()
+
+
+asyncio.run(main())
