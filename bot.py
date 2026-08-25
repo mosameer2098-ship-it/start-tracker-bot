@@ -31,11 +31,9 @@ def save_user(user_id):
 
 # Background Auto Broadcast Task (Har 60 seconds / 1 minute mein)
 async def auto_broadcast_loop():
-  # Thoda wait karenge taaki bot pehle successfully start ho jaye
-  await asyncio.sleep(10)
-  global AUTO_MSG
   while True:
-    await asyncio.sleep(60)  # 60 seconds = 1 minute
+    await asyncio.sleep(60)  # 1 minute wait
+    global AUTO_MSG
     if AUTO_MSG and os.path.exists("users.txt"):
       with open("users.txt", "r") as f:
         users = f.read().splitlines()
@@ -45,7 +43,7 @@ async def auto_broadcast_loop():
           user_id = int(uid)
           await app.send_message(user_id, AUTO_MSG)
         except Exception:
-          pass  # Agar user ne bot block kiya hoga toh ignore ho jayega
+          pass  # Blocked users ko ignore karega
 
 
 @app.on_message(filters.command("start") & filters.private)
@@ -159,21 +157,15 @@ async def set_auto_msg(client, message):
   )
 
 
-# Main function jo bot aur background task ko ek sath chalayega
-async def main():
-  # Background task start karein
+# Bot start hone par background loop ko chalu karne ke liye
+@app.on_ready()
+async def on_ready_handler(client):
+  print(
+      f"Bot @{client.me.username} successfully start ho gaya hai aur 1-min auto"
+      " broadcast active hai!"
+  )
   asyncio.create_task(auto_broadcast_loop())
-  # Bot start karein
-  await client_start_and_idle()
 
 
-async def client_start_and_idle():
-  from pyrogram import idle
-
-  await app.start()
-  print("Bot successfully start ho gaya hai aur 1-min auto broadcast active hai!")
-  await idle()
-
-
-if __name__ == "__main__":
-  asyncio.run(main())
+# Heroku par bina kisi crash ke chalane ka sabse secure tareeka
+app.run()
