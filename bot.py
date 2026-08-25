@@ -13,7 +13,6 @@ app = Client(
     "start_tracker_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
 )
 
-# Global variable jo automatic broadcast ke liye message store karega
 AUTO_MSG = None
 
 
@@ -56,16 +55,11 @@ async def start_handler(client, message):
   )
 
 
-# Background task jo har 2 minute mein automatic broadcast karega
 async def auto_broadcast_task():
-  await app.start()
-  print("Bot successfully start ho gaya hai!")
-
+  await client_start_safe()
   global AUTO_MSG
   while True:
-    # Har 120 seconds (2 minute) ka wait karega
-    await asyncio.sleep(120)
-
+    await asyncio.sleep(120)  # Har 2 minute baad
     if AUTO_MSG and os.path.exists("users.txt"):
       with open("users.txt", "r") as f:
         users = f.read().splitlines()
@@ -73,12 +67,11 @@ async def auto_broadcast_task():
       for uid in users:
         try:
           user_id = int(uid)
-          await client.send_message(user_id, AUTO_MSG)
+          await app.send_message(user_id, AUTO_MSG)
         except Exception:
-          pass  jisne bot block kiya hoga wahan ignore ho jayega
+          pass  # Jisne bot block kiya hoga wahan error ignore ho jayega
 
 
-# Command set karne ke liye (Jaise: /setauto Hello dosto)
 @app.on_message(
     filters.command(["setauto", "setbrod"])
     & filters.private
@@ -100,9 +93,13 @@ async def set_auto_msg(client, message):
   )
 
 
-# Automatic task aur idle ko ek sath chalane ke liye
+async def client_start_safe():
+  await app.start()
+  print("Bot successfully start ho gaya hai!")
+
+
 async def main():
-  # Background task shuru karein
+  await client_start_safe()
   asyncio.create_task(auto_broadcast_task())
   await idle()
 
