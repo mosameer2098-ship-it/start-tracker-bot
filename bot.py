@@ -1,3 +1,4 @@
+import asyncio
 import os
 from pyrogram import Client, filters, idle
 
@@ -12,8 +13,10 @@ app = Client(
     "start_tracker_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
 )
 
+# Global variable jo automatic broadcast ke liye message store karega
+AUTO_MSG = None
 
-# Function: User ID ko text file mein save karne ke liye
+
 def save_user(user_id):
   if not os.path.exists("users.txt"):
     with open("users.txt", "w") as f:
@@ -27,7 +30,6 @@ def save_user(user_id):
       f.write(str(user_id) + "\n")
 
 
-# 1. /start command handler
 @app.on_message(filters.command("start") & filters.private)
 async def start_handler(client, message):
   user = message.from_user
@@ -35,7 +37,6 @@ async def start_handler(client, message):
   username = f"@{user.username}" if user.username else "N/A"
   user_id = user.id
 
-  # User ID ko file mein save karein
   save_user(user_id)
 
   group_msg = (
@@ -55,49 +56,55 @@ async def start_handler(client, message):
   )
 
 
-# 2. /broadcast command handler (Sirf Admin ke liye)
+# Background task jo har 2 minute mein automatic broadcast karega
+async def auto_broadcast_task():
+  await app.start()
+  print("Bot successfully start ho gaya hai!")
+
+  global AUTO_MSG
+  while True:
+    # Har 120 seconds (2 minute) ka wait karega
+    await asyncio.sleep(120)
+
+    if AUTO_MSG and os.path.exists("users.txt"):
+      with open("users.txt", "r") as f:
+        users = f.read().splitlines()
+
+      for uid in users:
+        try:
+          user_id = int(uid)
+          await client.send_message(user_id, AUTO_MSG)
+        except Exception:
+          pass  jisne bot block kiya hoga wahan ignore ho jayega
+
+
+# Command set karne ke liye (Jaise: /setauto Hello dosto)
 @app.on_message(
-    filters.command("broadcast") & filters.private & filters.user(ADMIN_ID)
+    filters.command(["setauto", "setbrod"])
+    & filters.private
+    & filters.user(ADMIN_ID)
 )
-async def broadcast_handler(client, message):
-  if not message.reply_to_message and len(message.command) < 2:
+async def set_auto_msg(client, message):
+  global AUTO_MSG
+  if len(message.command) < 2:
     await message.reply_text(
-        "❌ **Kripya broadcast karne ke liye message likhein ya kisi message ko"
-        " reply karein!**\n\nExample: `/broadcast Hello dosto!`"
+        "❌ **Kripya message likhein!**\nExample: `/setauto Yeh message har 2"
+        " minute baad jayega.`"
     )
     return
 
-  if not os.path.exists("users.txt"):
-    await message.reply_text("❌ Abhi tak koi bhi user nahi hai database mein!")
-    return
-
-  sent_msg = await message.reply_text("⏳ **Broadcast shuru ho gaya hai...**")
-  success = 0
-  failed = 0
-
-  broadcast_content = message.reply_to_message or message.text.split(None, 1)[1]
-
-  with open("users.txt", "r") as f:
-    users = f.read().splitlines()
-
-  for uid in users:
-    try:
-      user_id = int(uid)
-      if message.reply_to_message:
-        await message.reply_to_message.copy(user_id)
-      else:
-        await client.send_message(user_id, broadcast_content)
-      success += 1
-    except Exception:
-      failed += 1
-
-  await sent_msg.edit_text(
-      f"✅ **Broadcast Poora Ho Gaya!**\n\n"
-      f"• **Successfully Sent:** `{success}`\n"
-      f"• **Failed (Blocked bot):** `{failed}`"
+  AUTO_MSG = message.text.split(None, 1)[1]
+  await message.reply_text(
+      "✅ **Automatic Broadcast set ho gaya hai!**\nAb ye message har 2 minute"
+      f" mein sabhi users ko jayega:\n\n`{AUTO_MSG}`"
   )
 
 
-app.start()
-print("Bot successfully start ho gaya hai aur file-based broadcast active hai!")
-idle()
+# Automatic task aur idle ko ek sath chalane ke liye
+async def main():
+  # Background task shuru karein
+  asyncio.create_task(auto_broadcast_task())
+  await idle()
+
+
+asyncio.run(main())
