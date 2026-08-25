@@ -6,7 +6,6 @@ API_HASH = os.getenv("API_HASH", "")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 GROUP_ID = int(os.getenv("GROUP_ID", "0"))
 
-# Yahan aapki Admin ID set hai (Sirf aap hi broadcast kar sakenge)
 ADMIN_ID = 8132623749
 
 app = Client(
@@ -14,13 +13,30 @@ app = Client(
 )
 
 
-# 1. /start command handler (Group mein alert bhejne ke liye)
+# Function: User ID ko text file mein save karne ke liye
+def save_user(user_id):
+  if not os.path.exists("users.txt"):
+    with open("users.txt", "w") as f:
+      f.write("")
+
+  with open("users.txt", "r") as f:
+    users = f.read().splitlines()
+
+  if str(user_id) not in users:
+    with open("users.txt", "a") as f:
+      f.write(str(user_id) + "\n")
+
+
+# 1. /start command handler
 @app.on_message(filters.command("start") & filters.private)
 async def start_handler(client, message):
   user = message.from_user
   name = user.first_name
   username = f"@{user.username}" if user.username else "N/A"
   user_id = user.id
+
+  # User ID ko file mein save karein
+  save_user(user_id)
 
   group_msg = (
       f"🔔 **New User Started Bot!**\n\n"
@@ -51,26 +67,29 @@ async def broadcast_handler(client, message):
     )
     return
 
+  if not os.path.exists("users.txt"):
+    await message.reply_text("❌ Abhi tak koi bhi user nahi hai database mein!")
+    return
+
   sent_msg = await message.reply_text("⏳ **Broadcast shuru ho gaya hai...**")
   success = 0
   failed = 0
 
   broadcast_content = message.reply_to_message or message.text.split(None, 1)[1]
 
-  async for dialog in client.get_dialogs():
-    if dialog.chat.type.name == "PRIVATE":
-      user_id = dialog.chat.id
-      if user_id == ADMIN_ID or user_id == client.me.id:
-        continue
+  with open("users.txt", "r") as f:
+    users = f.read().splitlines()
 
-      try:
-        if message.reply_to_message:
-          await message.reply_to_message.copy(user_id)
-        else:
-          await client.send_message(user_id, broadcast_content)
-        success += 1
-      except Exception:
-        failed += 1
+  for uid in users:
+    try:
+      user_id = int(uid)
+      if message.reply_to_message:
+        await message.reply_to_message.copy(user_id)
+      else:
+        await client.send_message(user_id, broadcast_content)
+      success += 1
+    except Exception:
+      failed += 1
 
   await sent_msg.edit_text(
       f"✅ **Broadcast Poora Ho Gaya!**\n\n"
@@ -80,5 +99,5 @@ async def broadcast_handler(client, message):
 
 
 app.start()
-print("Bot successfully start ho gaya hai aur broadcast feature active hai!")
+print("Bot successfully start ho gaya hai aur file-based broadcast active hai!")
 idle()
