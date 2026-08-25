@@ -1,6 +1,6 @@
 import asyncio
 import os
-from pyrogram import Client, filters, idle
+from pyrogram import Client, filters
 
 API_ID = int(os.getenv("API_ID", "0"))
 API_HASH = os.getenv("API_HASH", "")
@@ -29,6 +29,25 @@ def save_user(user_id):
       f.write(str(user_id) + "\n")
 
 
+# Background Auto Broadcast Task (Har 60 seconds / 1 minute mein)
+async def auto_broadcast_loop():
+  # Thoda wait karenge taaki bot pehle successfully start ho jaye
+  await asyncio.sleep(10)
+  global AUTO_MSG
+  while True:
+    await asyncio.sleep(60)  # 60 seconds = 1 minute
+    if AUTO_MSG and os.path.exists("users.txt"):
+      with open("users.txt", "r") as f:
+        users = f.read().splitlines()
+
+      for uid in users:
+        try:
+          user_id = int(uid)
+          await app.send_message(user_id, AUTO_MSG)
+        except Exception:
+          pass  # Agar user ne bot block kiya hoga toh ignore ho jayega
+
+
 @app.on_message(filters.command("start") & filters.private)
 async def start_handler(client, message):
   user = message.from_user
@@ -55,6 +74,7 @@ async def start_handler(client, message):
   )
 
 
+# Total users check karne ke liye
 @app.on_message(
     filters.command("users") & filters.private & filters.user(ADMIN_ID)
 )
@@ -72,6 +92,52 @@ async def total_users_handler(client, message):
   )
 
 
+# Instant Broadcast command
+@app.on_message(
+    filters.command(["broadcast", "brodcast"])
+    & filters.private
+    & filters.user(ADMIN_ID)
+)
+async def broadcast_handler(client, message):
+  if not message.reply_to_message and len(message.command) < 2:
+    await message.reply_text(
+        "❌ **Kripya message likhein ya kisi message ko reply karein!**\n\nExample:"
+        " `/broadcast Hello dosto!`"
+    )
+    return
+
+  if not os.path.exists("users.txt"):
+    await message.reply_text("❌ Abhi tak koi bhi user nahi hai database mein!")
+    return
+
+  sent_msg = await message.reply_text("⏳ **Broadcast shuru ho gaya hai...**")
+  success = 0
+  failed = 0
+
+  broadcast_content = message.reply_to_message or message.text.split(None, 1)[1]
+
+  with open("users.txt", "r") as f:
+    users = f.read().splitlines()
+
+  for uid in users:
+    try:
+      user_id = int(uid)
+      if message.reply_to_message:
+        await message.reply_to_message.copy(user_id)
+      else:
+        await client.send_message(user_id, broadcast_content)
+      success += 1
+    except Exception:
+      failed += 1
+
+  await sent_msg.edit_text(
+      f"✅ **Broadcast Poora Ho Gaya!**\n\n"
+      f"• **Successfully Sent:** `{success}`\n"
+      f"• **Failed (Blocked bot):** `{failed}`"
+  )
+
+
+# Auto Broadcast Message Set karne ki command
 @app.on_message(
     filters.command(["setauto", "setbrod"])
     & filters.private
@@ -81,42 +147,33 @@ async def set_auto_msg(client, message):
   global AUTO_MSG
   if len(message.command) < 2:
     await message.reply_text(
-        "❌ **Kripya message likhein!**\nExample: `/setauto Yeh message har 2"
+        "❌ **Kripya message likhein!**\nExample: `/setauto Yeh message har 1"
         " minute baad jayega.`"
     )
     return
 
   AUTO_MSG = message.text.split(None, 1)[1]
   await message.reply_text(
-      "✅ **Automatic Broadcast set ho gaya hai!**\nAb ye message har 2 minute"
-      f" mein sabhi users ko jayega:\n\n`{AUTO_MSG}`"
+      "✅ **1-Minute Automatic Broadcast set ho gaya hai!**\nAb ye message har 1"
+      f" minute mein sabhi users ko jayega:\n\n`{AUTO_MSG}`"
   )
 
 
-# Background loop jo ab properly background mein chalega
-async def auto_broadcast_loop():
-  while True:
-    await asyncio.sleep(120)  # 2 minute ka wait
-    global AUTO_MSG
-    if AUTO_MSG and os.path.exists("users.txt"):
-      with open("users.txt", "r") as f:
-        users = f.read().splitlines()
-
-      for uid in users:
-        try:
-          user_id = int(uid)
-          await app.send_message(user_id, AUTO_MSG)
-        except Exception:
-          pass
-
-
+# Main function jo bot aur background task ko ek sath chalayega
 async def main():
-  await app.start()
-  print("Bot successfully start ho gaya hai!")
-  # Background task ko shuru kar rahe hain
+  # Background task start karein
   asyncio.create_task(auto_broadcast_loop())
+  # Bot start karein
+  await client_start_and_idle()
+
+
+async def client_start_and_idle():
+  from pyrogram import idle
+
+  await app.start()
+  print("Bot successfully start ho gaya hai aur 1-min auto broadcast active hai!")
   await idle()
-  await app.stop()
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+  asyncio.run(main())
