@@ -31,6 +31,7 @@ def save_user(user_id):
 
 # Background Auto Broadcast Task (Har 60 seconds / 1 minute mein)
 async def auto_broadcast_loop():
+  await asyncio.sleep(15)  # Bot start hone ka 15 second wait karega
   while True:
     await asyncio.sleep(60)  # 1 minute wait
     global AUTO_MSG
@@ -157,15 +158,18 @@ async def set_auto_msg(client, message):
   )
 
 
-# Bot start hone par background loop ko chalu karne ke liye
-@app.on_ready()
-async def on_ready_handler(client):
-  print(
-      f"Bot @{client.me.username} successfully start ho gaya hai aur 1-min auto"
-      " broadcast active hai!"
-  )
+# Main function jo background task aur bot ko ek sath run karega
+async def main():
+  # Background task ko loop mein dal rahe hain
   asyncio.create_task(auto_broadcast_loop())
+  await app.start()
+  print("Bot successfully start ho gaya hai aur 1-min auto broadcast active hai!")
+  from pyrogram import idle
+
+  await idle()
+  await app.stop()
 
 
-# Heroku par bina kisi crash ke chalane ka sabse secure tareeka
-app.run()
+# Heroku par error-free run karne ke liye
+if __name__ == "__main__":
+  asyncio.run(main())
