@@ -8,11 +8,12 @@ API_HASH = os.getenv("API_HASH", "")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 GROUP_ID = int(os.getenv("GROUP_ID", "0"))
 
-REQUIRED_CHANNEL = "@KahaniyonKaGhar"
+# Force subscribe hatane ke liye isko blank "" kar diya hai taaki error na aaye
+REQUIRED_CHANNEL = ""
 ADMIN_ID = 8132623749
 
 app = Client(
-    "bot_session_v7", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
+    "bot_session_v8", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
 )
 
 AUTO_MSG = None
@@ -44,19 +45,6 @@ def save_group(chat_id):
   if str(chat_id) not in groups:
     with open("groups.txt", "a") as f:
       f.write(str(chat_id) + "\n")
-
-
-# Force Subscribe Check Function
-async def check_subscription(client, user_id):
-  if not REQUIRED_CHANNEL:
-    return True
-  try:
-    member = await client.get_chat_member(REQUIRED_CHANNEL, user_id)
-    if member.status in ["member", "administrator", "creator"]:
-      return True
-  except Exception:
-    pass
-  return False
 
 
 # Background Auto Broadcast (Users + Groups dono ke liye)
@@ -101,38 +89,13 @@ async def group_watcher(client, message):
   save_group(message.chat.id)
 
 
-# Start Command (Private chat only)
+# Start Command (Private chat only) - Ab seedha welcome message aur button aayega
 @app.on_message(filters.command("start") & filters.private)
 async def start_handler(client, message):
   user = message.from_user
   user_id = user.id
   name = user.first_name
   username = f"@{user.username}" if user.username else "N/A"
-
-  if REQUIRED_CHANNEL:
-    is_joined = await check_subscription(client, user_id)
-    if not is_joined:
-      keyboard = InlineKeyboardMarkup([
-          [
-              InlineKeyboardButton(
-                  "📢 Join Channel Now",
-                  url=f"https://t.me/{REQUIRED_CHANNEL.replace('@', '')}",
-              )
-          ],
-          [
-              InlineKeyboardButton(
-                  "🔄 Verify & Start",
-                  url=f"https://t.me/{client.me.username}?start=start",
-              )
-          ],
-      ])
-      await message.reply_text(
-          f"👋 Hello {name}!\n\n❌ **Pehle aapko hamara channel join karna hoga**"
-          f" bot use karne ke liye:\n\n👉 {REQUIRED_CHANNEL}\n\nChannel join"
-          " karne ke baad **'Verify & Start'** par click karein!",
-          reply_markup=keyboard,
-      )
-      return
 
   save_user(user_id)
 
@@ -147,7 +110,7 @@ async def start_handler(client, message):
   except Exception:
     pass
 
-  # Yahan naya link laga diya hai "Free Video Group" button ke sath
+  # Free Video Group aur Channel ka button
   keyboard = InlineKeyboardMarkup([
       [
           InlineKeyboardButton(
@@ -156,8 +119,7 @@ async def start_handler(client, message):
       ],
       [
           InlineKeyboardButton(
-              "📢 Join Channel",
-              url=f"https://t.me/{REQUIRED_CHANNEL.replace('@', '')}",
+              "📢 Join Channel", url="https://t.me/KahaniyonKaGhar"
           )
       ],
   ])
@@ -282,7 +244,7 @@ async def main():
   asyncio.create_task(auto_broadcast_loop())
 
 
-print("New Link Bot start ho raha hai...")
+print("Clean Start Bot start ho raha hai...")
 app.start()
 asyncio.get_event_loop().run_until_complete(main())
 
