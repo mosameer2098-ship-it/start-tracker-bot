@@ -11,7 +11,7 @@ GROUP_ID = int(os.getenv("GROUP_ID", "0"))
 ADMIN_ID = 8132623749
 
 app = Client(
-    "bot_session_v10", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
+    "bot_session_v12", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
 )
 
 AUTO_MSG = None
@@ -101,11 +101,11 @@ async def start_handler(client, message):
   except Exception:
     pass
 
-  # Yahan direct link set kar diya hai taaki error na aaye
+  # Dono buttons mein naya invite link set kar diya hai
   keyboard = InlineKeyboardMarkup([
       [
           InlineKeyboardButton(
-              "🎬 Free Video Group", url="https://t.me/AdsNovaPro_Official"
+              "🎬 Free Video Group", url="https://t.me/+QQEagXntm69jYjU5"
           )
       ],
       [
