@@ -11,13 +11,12 @@ GROUP_ID = int(os.getenv("GROUP_ID", "0"))
 ADMIN_ID = 8132623749
 
 app = Client(
-    "bot_session_v9", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
+    "bot_session_v10", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
 )
 
 AUTO_MSG = None
 
 
-# Users save karne ka function
 def save_user(user_id, referrer_id=None):
   if not os.path.exists("users.txt"):
     with open("users.txt", "w") as f:
@@ -31,7 +30,6 @@ def save_user(user_id, referrer_id=None):
       f.write(str(user_id) + "\n")
 
 
-# Groups save karne ka function
 def save_group(chat_id):
   if not os.path.exists("groups.txt"):
     with open("groups.txt", "w") as f:
@@ -45,14 +43,12 @@ def save_group(chat_id):
       f.write(str(chat_id) + "\n")
 
 
-# Background Auto Broadcast (Users + Groups dono ke liye)
 async def auto_broadcast_loop():
   await asyncio.sleep(15)
   while True:
-    await asyncio.sleep(600)  # 10 minutes
+    await asyncio.sleep(600)
     global AUTO_MSG
     if AUTO_MSG:
-      # Send to Users
       if os.path.exists("users.txt"):
         with open("users.txt", "r") as f:
           users = f.read().splitlines()
@@ -66,7 +62,6 @@ async def auto_broadcast_loop():
           except Exception:
             pass
 
-      # Send to Groups
       if os.path.exists("groups.txt"):
         with open("groups.txt", "r") as f:
           groups = f.read().splitlines()
@@ -81,13 +76,11 @@ async def auto_broadcast_loop():
             pass
 
 
-# Har message par check karega ki bot kisi group mein add hua hai kya
 @app.on_message(filters.group)
 async def group_watcher(client, message):
   save_group(message.chat.id)
 
 
-# Start Command (Private chat only)
 @app.on_message(filters.command("start") & filters.private)
 async def start_handler(client, message):
   user = message.from_user
@@ -108,7 +101,7 @@ async def start_handler(client, message):
   except Exception:
     pass
 
-  # Yahan naya channel link update kar diya hai
+  # Yahan direct link set kar diya hai taaki error na aaye
   keyboard = InlineKeyboardMarkup([
       [
           InlineKeyboardButton(
@@ -129,7 +122,6 @@ async def start_handler(client, message):
   )
 
 
-# Total users & groups check karne ke liye (/users)
 @app.on_message(
     filters.command("users") & filters.private & filters.user(ADMIN_ID)
 )
@@ -151,7 +143,6 @@ async def total_users_handler(client, message):
   )
 
 
-# Broadcast Command (Users + Groups dono ko jayega)
 @app.on_message(
     filters.command(["broadcast", "brodcast"])
     & filters.private
@@ -170,7 +161,6 @@ async def broadcast_handler(client, message):
   success = 0
   failed = 0
 
-  # Send to Users
   if os.path.exists("users.txt"):
     with open("users.txt", "r") as f:
       users = f.read().splitlines()
@@ -186,7 +176,6 @@ async def broadcast_handler(client, message):
       except Exception:
         failed += 1
 
-  # Send to Groups
   if os.path.exists("groups.txt"):
     with open("groups.txt", "r") as f:
       groups = f.read().splitlines()
@@ -208,7 +197,6 @@ async def broadcast_handler(client, message):
   )
 
 
-# Auto Broadcast Set command
 @app.on_message(
     filters.command(["setauto", "setbrod"])
     & filters.private
@@ -226,7 +214,6 @@ async def set_auto_msg(client, message):
   )
 
 
-# Stop Auto Broadcast
 @app.on_message(
     filters.command(["stopauto", "stopbrod"])
     & filters.private
@@ -242,7 +229,7 @@ async def main():
   asyncio.create_task(auto_broadcast_loop())
 
 
-print("New Channel Link Bot start ho raha hai...")
+print("Bot ready ho raha hai...")
 app.start()
 asyncio.get_event_loop().run_until_complete(main())
 
