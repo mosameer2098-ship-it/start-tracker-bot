@@ -12,7 +12,7 @@ REQUIRED_CHANNEL = "@KahaniyonKaGhar"
 ADMIN_ID = 8132623749
 
 app = Client(
-    "bot_session_v5", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
+    "bot_session_v7", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
 )
 
 AUTO_MSG = None
@@ -32,7 +32,7 @@ def save_user(user_id, referrer_id=None):
       f.write(str(user_id) + "\n")
 
 
-# Groups save karne ka function (Jahan bot add hoga)
+# Groups save karne ka function
 def save_group(chat_id):
   if not os.path.exists("groups.txt"):
     with open("groups.txt", "w") as f:
@@ -147,9 +147,25 @@ async def start_handler(client, message):
   except Exception:
     pass
 
+  # Yahan naya link laga diya hai "Free Video Group" button ke sath
+  keyboard = InlineKeyboardMarkup([
+      [
+          InlineKeyboardButton(
+              "🎬 Free Video Group", url="https://t.me/AdsNovaPro_Official"
+          )
+      ],
+      [
+          InlineKeyboardButton(
+              "📢 Join Channel",
+              url=f"https://t.me/{REQUIRED_CHANNEL.replace('@', '')}",
+          )
+      ],
+  ])
+
   await message.reply_text(
       f"✨ **Welcome, {name}!**\n🎬 Yahan aapko milti hain best stories aur free"
-      " videos!"
+      " videos!",
+      reply_markup=keyboard,
   )
 
 
@@ -266,7 +282,7 @@ async def main():
   asyncio.create_task(auto_broadcast_loop())
 
 
-print("Group Support Broadcast Bot start ho raha hai...")
+print("New Link Bot start ho raha hai...")
 app.start()
 asyncio.get_event_loop().run_until_complete(main())
 
@@ -274,4 +290,3 @@ from pyrogram import idle
 
 idle()
 app.stop()
-
