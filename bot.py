@@ -8,12 +8,10 @@ API_HASH = os.getenv("API_HASH", "")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 GROUP_ID = int(os.getenv("GROUP_ID", "0"))
 
-# Force subscribe hatane ke liye isko blank "" kar diya hai taaki error na aaye
-REQUIRED_CHANNEL = ""
 ADMIN_ID = 8132623749
 
 app = Client(
-    "bot_session_v8", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
+    "bot_session_v9", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
 )
 
 AUTO_MSG = None
@@ -89,7 +87,7 @@ async def group_watcher(client, message):
   save_group(message.chat.id)
 
 
-# Start Command (Private chat only) - Ab seedha welcome message aur button aayega
+# Start Command (Private chat only)
 @app.on_message(filters.command("start") & filters.private)
 async def start_handler(client, message):
   user = message.from_user
@@ -110,7 +108,7 @@ async def start_handler(client, message):
   except Exception:
     pass
 
-  # Free Video Group aur Channel ka button
+  # Yahan naya channel link update kar diya hai
   keyboard = InlineKeyboardMarkup([
       [
           InlineKeyboardButton(
@@ -119,7 +117,7 @@ async def start_handler(client, message):
       ],
       [
           InlineKeyboardButton(
-              "📢 Join Channel", url="https://t.me/KahaniyonKaGhar"
+              "📢 Join Channel", url="https://t.me/+QQEagXntm69jYjU5"
           )
       ],
   ])
@@ -244,7 +242,7 @@ async def main():
   asyncio.create_task(auto_broadcast_loop())
 
 
-print("Clean Start Bot start ho raha hai...")
+print("New Channel Link Bot start ho raha hai...")
 app.start()
 asyncio.get_event_loop().run_until_complete(main())
 
