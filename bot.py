@@ -29,7 +29,7 @@ def save_user(user_id):
       f.write(str(user_id) + "\n")
 
 
-# Background Auto Broadcast Task (Ab ye har 10 minutes mein chalega)
+# Background Auto Broadcast Task (Har 10 minutes mein)
 async def auto_broadcast_loop():
   await asyncio.sleep(15)
   while True:
@@ -138,7 +138,7 @@ async def broadcast_handler(client, message):
   )
 
 
-# Auto Broadcast Set karne ki command (Ab ye 10 minutes par chalega)
+# Auto Broadcast Set karne ki command
 @app.on_message(
     filters.command(["setauto", "setbrod"])
     & filters.private
@@ -157,6 +157,21 @@ async def set_auto_msg(client, message):
   await message.reply_text(
       "✅ **10-Minutes Automatic Broadcast set ho gaya hai!**\nAb ye message har"
       " 10 minute mein sabhi users ko jata rahega."
+  )
+
+
+# Auto Broadcast off karne ki command (Nayi command)
+@app.on_message(
+    filters.command(["stopauto", "stopbrod"])
+    & filters.private
+    & filters.user(ADMIN_ID)
+)
+async def stop_auto_msg(client, message):
+  global AUTO_MSG
+  AUTO_MSG = None
+  await message.reply_text(
+      "🛑 **Automatic Broadcast band kar diya gaya hai!**\nAb koi bhi auto"
+      " message nahi jayega."
   )
 
 
